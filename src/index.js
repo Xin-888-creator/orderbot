@@ -1667,10 +1667,22 @@ async function resetTest(
     .run();
 }
 
+function createTestEnv(env) {
+  return new Proxy(env, {
+    get(target, property) {
+      if (property === "TEST_MODE") {
+        return "true";
+      }
+
+      return target[property];
+    }
+  });
+}
 async function testMessage(
   env,
   body
 ) {
+  env = createTestEnv(env);
   const session = String(
     body.session ||
       "601122334455"
