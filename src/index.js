@@ -2412,6 +2412,21 @@ export default {
       const url =
         new URL(request.url);
 
+      if (
+  url.pathname === "/debug"
+  && request.method === "GET"
+) {
+  return json({
+    TEST_MODE: Boolean(env.TEST_MODE),
+    ORDER_WEBSITE_URL: Boolean(env.ORDER_WEBSITE_URL),
+    GOOGLE_MAPS_API_KEY: Boolean(env.GOOGLE_MAPS_API_KEY),
+    WHATSAPP_TOKEN: Boolean(env.WHATSAPP_TOKEN),
+    WHATSAPP_PHONE_NUMBER_ID: Boolean(
+      env.WHATSAPP_PHONE_NUMBER_ID
+    )
+  });
+}
+
       /*
         Health check
       */
