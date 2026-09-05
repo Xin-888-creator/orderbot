@@ -1,9 +1,9 @@
 name = "minnan-whatsapp-order-bot"
 main = "src/index.js"
-compatibility_date = "2026-09-04"
+compatibility_date = "2026-09-05"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "minnan-orders"
-database_id = "70c258f2-3a7f-4551-8fe3-581d8cb8c4cd"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 migrations_dir = "migrations"
