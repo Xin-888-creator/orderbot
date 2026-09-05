@@ -1,6 +1,7 @@
 name = "minnan-whatsapp-order-bot"
 main = "src/index.js"
 compatibility_date = "2026-09-05"
+keep_vars = true
 
 [[d1_databases]]
 binding = "DB"
