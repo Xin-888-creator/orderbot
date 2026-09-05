@@ -32,5 +32,8 @@ CREATE TABLE IF NOT EXISTS orders (
   FOREIGN KEY (customer_id) REFERENCES customers(id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
-CREATE INDEX IF NOT EXISTS idx_customers_state ON customers(state);
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id
+ON orders(customer_id);
+
+CREATE INDEX IF NOT EXISTS idx_customers_state
+ON customers(state);
