@@ -146,53 +146,133 @@ function formatPhone(phone) {
 -------------------------- */
 
 function isOrderText(text) {
-  const value = String(text || "");
+  const value = String(text || "")
+    .replace(/\r?\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   const hasOrderMarker =
     value.includes("订单明细") ||
     value.toLowerCase().includes("order details");
 
   const hasTotal =
-    /总计\s*[:：]\s*rm\s*\d+(?:\.\d{1,2})?/i.test(value) ||
+    /总计\s*[:：]?\s*rm\s*\d+(?:\.\d{1,2})?/i.test(value) ||
     /total\s*[:：]?\s*rm\s*\d+(?:\.\d{1,2})?/i.test(value);
 
-  const hasItemLine =
-    /(^|\n)\s*[•\-*]\s*.+?\s*x\s*\d+\s*$/im.test(value);
+  const hasProductQuantity =
+    /[•\-*]?\s*.+?\s*x\s*\d+/i.test(value);
 
-  return hasOrderMarker && (hasTotal || hasItemLine);
+  return (
+    hasOrderMarker &&
+    hasTotal &&
+    hasProductQuantity
+  );
 }
 
 function parseOrder(text) {
   const raw = String(text || "").trim();
 
-  const lines = raw
-    .split(/\r?\n/)
-    .map((x) => x.trim())
-    .filter(Boolean);
+  /*
+    把多行/单行订单统一处理。
+    例如：
+
+    你好，我要下单：
+    订单明细：
+    • 生面（1斤） x 1
+    总计：RM 5.50
+
+    或者整段变成一行，都可以识别。
+  */
+
+  const normalized = raw
+    .replace(/\r?\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   const items = [];
 
-  for (const line of lines) {
-    const match = line.match(
-      /^[•\-*]\s*(.+?)\s*x\s*(\d+)\s*$/i
-    );
+  /*
+    找到“订单明细”后，到“总计”之前的内容。
+  */
+  const itemSectionMatch = normalized.match(
+    /订单明细\s*[:：]?\s*(.*?)(?=\s*(?:---+|—+)?\s*总计\s*[:：]?)/i
+  );
 
-    if (match) {
+  const itemSection = itemSectionMatch
+    ? itemSectionMatch[1]
+    : normalized;
+
+  /*
+    匹配：
+    • 生面（1斤） x 1
+    • 肉粽 x 2
+
+    即使前面的 • 被 WhatsApp/网页格式处理掉，也尽量识别。
+  */
+  const itemMatches = itemSection.matchAll(
+    /[•\-*]?\s*(.+?)\s*x\s*(\d+)(?=\s*(?:•|\-|$))/gi
+  );
+
+  for (const match of itemMatches) {
+    const name = match[1]
+      .replace(/^[:：\s]+/, "")
+      .trim();
+
+    const quantity = Number(match[2]);
+
+    if (
+      name &&
+      Number.isFinite(quantity) &&
+      quantity > 0
+    ) {
       items.push({
-        name: match[1].trim(),
-        quantity: Number(match[2])
+        name,
+        quantity
       });
     }
   }
 
-  const totalMatch = raw.match(
+  /*
+    如果上面的规则没抓到，再使用更宽松的备用规则。
+  */
+  if (!items.length) {
+    const fallbackMatches = itemSection.matchAll(
+      /[•\-*]?\s*(.+?)\s*x\s*(\d+)/gi
+    );
+
+    for (const match of fallbackMatches) {
+      const name = match[1]
+        .replace(/^[:：\s]+/, "")
+        .trim();
+
+      const quantity = Number(match[2]);
+
+      if (
+        name &&
+        Number.isFinite(quantity) &&
+        quantity > 0
+      ) {
+        items.push({
+          name,
+          quantity
+        });
+      }
+    }
+  }
+
+  /*
+    读取总计
+  */
+  const totalMatch = normalized.match(
     /(?:总计|total)\s*[:：]?\s*rm\s*(\d+(?:\.\d{1,2})?)/i
   );
 
   return {
     raw,
     items,
-    subtotal: totalMatch ? Number(totalMatch[1]) : null
+    subtotal: totalMatch
+      ? Number(totalMatch[1])
+      : null
   };
 }
 
